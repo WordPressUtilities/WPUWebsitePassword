@@ -4,7 +4,7 @@
 Plugin Name: WPU Website Password
 Plugin URI: https://github.com/WordPressUtilities/wpuwebsitepassword
 Description: Add a single password requirement to your website
-Version: 0.1.0
+Version: 0.2.0
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -25,8 +25,9 @@ class WPUWebsitePassword {
         add_action('init', array(&$this, 'load_translation'));
         add_action('init', array(&$this, 'set_options'));
         add_action('init', array(&$this, 'init'));
-        add_action('wp_loaded', array(&$this, 'trigger_password_prompt'));
+        add_action('wp', array(&$this, 'trigger_password_prompt'));
         add_action('wpuwebsitepassword_before_prompt', array(&$this, 'test_password_prompt'), 10);
+        add_action('wpuwebsitepassword_before_template', array(&$this, 'load_default_template'), 90);
     }
 
     public function load_translation() {
@@ -66,6 +67,11 @@ class WPUWebsitePassword {
                 'label' => __('Case sensitive', 'wpuwebsitepassword'),
                 'label_check' => __('Visitors should type this password with uppercase or lowercase letters if presents', 'wpuwebsitepassword'),
                 'type' => 'checkbox'
+            ),
+            'redirect_homepage' => array(
+                'label' => __('Redirect to home', 'wpuwebsitepassword'),
+                'label_check' => __('Redirect unauthenticated access to the homepage.', 'wpuwebsitepassword'),
+                'type' => 'checkbox'
             )
         );
         $this->option = get_option($this->settings_details['option_id']);
@@ -98,6 +104,11 @@ class WPUWebsitePassword {
             return;
         }
 
+        /* Disable on login/register page */
+        if (in_array($GLOBALS['pagenow'], array('wp-login.php', 'wp-register.php'))) {
+            return;
+        }
+
         /* Disabled if user is logged-in */
         if (is_user_logged_in()) {
             return;
@@ -113,8 +124,13 @@ class WPUWebsitePassword {
             return;
         }
 
-        include dirname(__FILE__) . '/tpl/form.php';
-        die;
+        if ($this->get_redirect_homepage() && !is_home() && !is_front_page()) {
+            wp_redirect(home_url());
+            die;
+        }
+
+        do_action('wpuwebsitepassword_before_template');
+
     }
 
     public function test_password_prompt() {
@@ -131,6 +147,11 @@ class WPUWebsitePassword {
             $this->has_user_password = 1;
         }
 
+    }
+
+    public function load_default_template() {
+        include dirname(__FILE__) . '/tpl/base.php';
+        die;
     }
 
     /* ----------------------------------------------------------
@@ -159,6 +180,10 @@ class WPUWebsitePassword {
 
     public function get_case_sensitive() {
         return isset($this->option['case_sensitive']) && $this->option['case_sensitive'];
+    }
+
+    public function get_redirect_homepage() {
+        return isset($this->option['redirect_homepage']) && $this->option['redirect_homepage'];
     }
 
     public function get_cookie_duration() {
