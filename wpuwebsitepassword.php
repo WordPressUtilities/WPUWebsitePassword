@@ -4,7 +4,7 @@
 Plugin Name: WPU Website Password
 Plugin URI: https://github.com/WordPressUtilities/wpuwebsitepassword
 Description: Add a single password requirement to your website
-Version: 0.2.1
+Version: 0.2.2
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -191,7 +191,7 @@ class WPUWebsitePassword {
     }
 
     public function get_cookie_duration() {
-        if (isset($this->option['cookie_duration']) && is_numeric($this->option['cookie_duration'])) {
+        if (isset($this->option['cookie_duration']) && is_numeric($this->option['cookie_duration']) && $this->option['cookie_duration']) {
             return intval($this->option['cookie_duration'], 10);
         }
         return 1800;
