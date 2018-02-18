@@ -1,9 +1,11 @@
-<!DOCTYPE HTML>
+<?php
+?><!DOCTYPE HTML>
 <html lang="fr-FR">
     <head>
         <meta charset="UTF-8" />
-        <title><?php echo apply_filters('wpuwebsitepassword_tpl_form__title', __('Website Protection','wpuwebsitepassword')) ?></title>
+        <title><?php echo apply_filters('wpuwebsitepassword_tpl_form__title', __('Website Protection','wpuwebsitepassword'), 'title') ?></title>
         <?php noindex() ?>
+        <?php echo $wpuwebsitepassword_styles; ?>
 <style>
 * {
     margin: 0;
@@ -18,6 +20,10 @@ body {
 
 h1 {
     margin-bottom: 0.5em;
+}
+
+h1 img{
+    max-width: 200px;
 }
 
 ul,
@@ -35,7 +41,7 @@ button {
 </style>
     </head>
     <body>
-        <h1><?php echo apply_filters('wpuwebsitepassword_tpl_form__title', __('Website Protection','wpuwebsitepassword')) ?></h1>
+        <h1><?php echo apply_filters('wpuwebsitepassword_tpl_form__title', __('Website Protection','wpuwebsitepassword'), 'h1') ?></h1>
         <?php include dirname( __FILE__ ) . '/form.php'; ?>
     </body>
 </html>

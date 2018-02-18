@@ -4,7 +4,7 @@
 Plugin Name: WPU Website Password
 Plugin URI: https://github.com/WordPressUtilities/wpuwebsitepassword
 Description: Add a single password requirement to your website
-Version: 0.2.2
+Version: 0.3.0
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -25,9 +25,10 @@ class WPUWebsitePassword {
         add_action('init', array(&$this, 'load_translation'));
         add_action('init', array(&$this, 'set_options'));
         add_action('init', array(&$this, 'init'));
-        add_action('wp', array(&$this, 'trigger_password_prompt'));
+        add_action('template_redirect', array(&$this, 'trigger_password_prompt'));
         add_action('wpuwebsitepassword_before_prompt', array(&$this, 'test_password_prompt'), 10);
         add_action('wpuwebsitepassword_before_template', array(&$this, 'load_default_template'), 90);
+        add_action('wpuwebsitepassword_tpl_form__title', array(&$this, 'load_default_title'), 90, 2);
     }
 
     public function load_translation() {
@@ -43,8 +44,11 @@ class WPUWebsitePassword {
             'plugin_id' => 'wpuwebsitepassword',
             'option_id' => 'wpuwebsitepassword_options',
             'sections' => array(
-                'import' => array(
+                'protection' => array(
                     'name' => __('Protection', 'wpuwebsitepassword')
+                ),
+                'template' => array(
+                    'name' => __('Default page options', 'wpuwebsitepassword')
                 )
             )
         );
@@ -72,6 +76,18 @@ class WPUWebsitePassword {
                 'label' => __('Redirect to home', 'wpuwebsitepassword'),
                 'label_check' => __('Redirect unauthenticated access to the homepage.', 'wpuwebsitepassword'),
                 'type' => 'checkbox'
+            ),
+            'load_assets' => array(
+                'label' => __('Load assets', 'wpuwebsitepassword'),
+                'label_check' => __('Default CSS will be loaded.', 'wpuwebsitepassword'),
+                'type' => 'checkbox',
+                'section' => 'template'
+            ),
+            'load_header_image' => array(
+                'label' => __('Load header image', 'wpuwebsitepassword'),
+                'label_check' => __('Default header image will be loaded.', 'wpuwebsitepassword'),
+                'type' => 'checkbox',
+                'section' => 'template'
             )
         );
         $this->option = get_option($this->settings_details['option_id']);
@@ -154,8 +170,25 @@ class WPUWebsitePassword {
     }
 
     public function load_default_template() {
+        $wpuwebsitepassword_styles = '';
+        if (isset($this->option['load_assets']) && $this->option['load_assets'] == '1') {
+            ob_start();
+            wp_head();
+            $out = ob_get_clean();
+            /* Extract all stylesheets from wp_head */
+            preg_match_all('/<link rel=\'stylesheet([^>]*)\/>/', $out, $matches);
+            $wpuwebsitepassword_styles = implode('', $matches[0]);
+        }
+
         include dirname(__FILE__) . '/tpl/base.php';
         die;
+    }
+
+    public function load_default_title($title, $context) {
+        if ($context != 'title' && isset($this->option['load_header_image']) && $this->option['load_header_image'] == '1' && has_header_image()) {
+            $title = '<img src="' . get_header_image() . '" alt="' . esc_attr($title) . '" />';
+        }
+        return $title;
     }
 
     /* ----------------------------------------------------------
