@@ -4,7 +4,7 @@
 Plugin Name: WPU Website Password
 Plugin URI: https://github.com/WordPressUtilities/wpuwebsitepassword
 Description: Add a single password requirement to your website
-Version: 0.4.0
+Version: 0.5.0
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,6 +12,7 @@ License URI: http://opensource.org/licenses/MIT
 */
 
 class WPUWebsitePassword {
+    public $plugin_version = '0.5.0';
     public $option;
     public $messages;
     public $has_user_password = false;
@@ -29,6 +30,7 @@ class WPUWebsitePassword {
         add_action('wpuwebsitepassword_before_prompt', array(&$this, 'test_password_prompt'), 10);
         add_action('wpuwebsitepassword_before_template', array(&$this, 'load_default_template'), 90);
         add_action('wpuwebsitepassword_tpl_form__title', array(&$this, 'load_default_title'), 90, 2);
+        add_filter('rest_endpoints', array(&$this, 'disable_rest_endpoints'), 10, 1);
     }
 
     public function load_translation() {
@@ -39,7 +41,7 @@ class WPUWebsitePassword {
         /* Options */
         $this->settings_details = array(
             'create_page' => true,
-            'plugin_basename' => plugin_basename( __FILE__ ),
+            'plugin_basename' => plugin_basename(__FILE__),
             'parent_page' => 'tools.php',
             'plugin_name' => __('Website Password', 'wpuwebsitepassword'),
             'plugin_id' => 'wpuwebsitepassword',
@@ -95,9 +97,17 @@ class WPUWebsitePassword {
     }
 
     public function init() {
+
+        include 'inc/WPUBaseUpdate/WPUBaseUpdate.php';
+        $this->settings_update = new \wpuwebsitepassword\WPUBaseUpdate(
+            'WordPressUtilities',
+            'wpuwebsitepassword',
+            $this->plugin_version);
+
         if (!is_admin()) {
             return;
         }
+
         /* Messages */
         include 'inc/WPUBaseMessages/WPUBaseMessages.php';
         $this->messages = new \wpuwebsitepassword\WPUBaseMessages($this->options['plugin_id']);
@@ -109,29 +119,43 @@ class WPUWebsitePassword {
         new \wpuwebsitepassword\WPUBaseSettings($this->settings_details, $this->settings);
     }
 
-    public function trigger_password_prompt() {
+    public function disable_rest_endpoints($endpoints) {
+        if ($this->need_password_prompt()) {
+            $endpoints = array();
+        }
+        return $endpoints;
+    }
 
+    public function need_password_prompt() {
         /* Is protection enabled ? */
         if ($this->option['enable_protection'] != '1') {
-            return;
+            return false;
         }
 
         /* Disabled on admin */
         if (is_admin()) {
-            return;
+            return false;
         }
 
         /* Disable on login/register page */
         if (in_array($GLOBALS['pagenow'], array('wp-login.php', 'wp-register.php'))) {
-            return;
+            return false;
         }
 
         if (apply_filters('wpuwebsitepassword_prevent_prompt', false)) {
-            return;
+            return false;
         }
 
         /* Disabled if user is logged-in */
         if (is_user_logged_in()) {
+            return false;
+        }
+        return true;
+    }
+
+    public function trigger_password_prompt() {
+
+        if (!$this->need_password_prompt()) {
             return;
         }
 
