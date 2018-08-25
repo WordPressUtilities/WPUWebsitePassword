@@ -4,6 +4,7 @@
     <head>
         <meta charset="UTF-8" />
         <title><?php echo apply_filters('wpuwebsitepassword_tpl_form__title', __('Website Protection','wpuwebsitepassword'), 'title') ?></title>
+        <meta name="viewport" content="width=device-width" />
         <?php noindex() ?>
         <?php echo $wpuwebsitepassword_styles; ?>
 <style>
