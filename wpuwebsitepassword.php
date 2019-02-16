@@ -4,7 +4,7 @@
 Plugin Name: WPU Website Password
 Plugin URI: https://github.com/WordPressUtilities/wpuwebsitepassword
 Description: Add a single password requirement to your website
-Version: 0.5.1
+Version: 0.6.0
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ License URI: http://opensource.org/licenses/MIT
 */
 
 class WPUWebsitePassword {
-    public $plugin_version = '0.5.1';
+    public $plugin_version = '0.6.0';
     public $option;
     public $messages;
     public $has_user_password = false;
@@ -29,7 +29,7 @@ class WPUWebsitePassword {
         add_action('template_redirect', array(&$this, 'trigger_password_prompt'));
         add_action('wpuwebsitepassword_before_prompt', array(&$this, 'test_password_prompt'), 10);
         add_action('wpuwebsitepassword_before_template', array(&$this, 'load_default_template'), 90);
-        add_action('wpuwebsitepassword_tpl_form__title', array(&$this, 'load_default_title'), 90, 2);
+        add_filter('wpuwebsitepassword_tpl_form__title', array(&$this, 'load_default_title'), 90, 2);
         add_filter('rest_endpoints', array(&$this, 'disable_rest_endpoints'), 10, 1);
     }
 
@@ -50,6 +50,12 @@ class WPUWebsitePassword {
                 'protection' => array(
                     'name' => __('Protection', 'wpuwebsitepassword')
                 ),
+                'user' => array(
+                    'name' => __('User')
+                ),
+                'password' => array(
+                    'name' => __('Password')
+                ),
                 'template' => array(
                     'name' => __('Default page options', 'wpuwebsitepassword')
                 )
@@ -58,30 +64,46 @@ class WPUWebsitePassword {
         $this->settings = array(
             'enable_protection' => array(
                 'label' => __('Protection', 'wpuwebsitepassword'),
-                'label_check' => __('Enable password protection', 'wpuwebsitepassword'),
+                'label_check' => __('Enable protection', 'wpuwebsitepassword'),
                 'type' => 'checkbox'
+            ),
+            'user_protection' => array(
+                'label' => __('User Access', 'wpuwebsitepassword'),
+                'label_check' => __('Protect via login rather than simple password.', 'wpuwebsitepassword'),
+                'type' => 'checkbox',
+                'section' => 'user'
             ),
             'cookie_duration' => array(
                 'label' => __('Cookie Duration', 'wpuwebsitepassword'),
                 'type' => 'number',
-                'help' => __('Visitors will be automatically logged out after this number of seconds', 'wpuwebsitepassword')
+                'help' => __('Visitors will be automatically logged out after this number of seconds.', 'wpuwebsitepassword'),
+                'section' => 'password'
             ),
             'password' => array(
                 'label' => __('Password', 'wpuwebsitepassword'),
-                'help' => __('Visitors will have to type this password to access your website', 'wpuwebsitepassword')
+                'help' => __('Visitors will have to type this password to access your website.', 'wpuwebsitepassword'),
+                'section' => 'password'
             ),
             'case_sensitive' => array(
                 'label' => __('Case sensitive', 'wpuwebsitepassword'),
-                'label_check' => __('Visitors should type this password with uppercase or lowercase letters if presents', 'wpuwebsitepassword'),
-                'type' => 'checkbox'
+                'label_check' => __('Visitors should type this password with uppercase or lowercase letters if presents.', 'wpuwebsitepassword'),
+                'type' => 'checkbox',
+                'section' => 'password'
             ),
             'redirect_homepage' => array(
                 'label' => __('Redirect to home', 'wpuwebsitepassword'),
                 'label_check' => __('Redirect unauthenticated access to the homepage.', 'wpuwebsitepassword'),
-                'type' => 'checkbox'
+                'type' => 'checkbox',
+                'section' => 'password'
             ),
             'load_assets' => array(
                 'label' => __('Load assets', 'wpuwebsitepassword'),
+                'label_check' => __('Site CSS will be loaded.', 'wpuwebsitepassword'),
+                'type' => 'checkbox',
+                'section' => 'template'
+            ),
+            'load_default_style' => array(
+                'label' => __('Load default style', 'wpuwebsitepassword'),
                 'label_check' => __('Default CSS will be loaded.', 'wpuwebsitepassword'),
                 'type' => 'checkbox',
                 'section' => 'template'

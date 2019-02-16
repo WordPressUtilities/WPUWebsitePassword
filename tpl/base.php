@@ -7,6 +7,7 @@
         <meta name="viewport" content="width=device-width" />
         <?php noindex() ?>
         <?php echo $wpuwebsitepassword_styles; ?>
+<?php if(!isset($this->option['load_default_style']) || (isset($this->option['load_default_style']) && $this->option['load_default_style'] == '1')): ?>
 <style>
 * {
     margin: 0;
@@ -40,9 +41,17 @@ button {
     padding: 0.5em 1em;
 }
 </style>
+<?php endif; ?>
     </head>
     <body>
         <h1><?php echo apply_filters('wpuwebsitepassword_tpl_form__title', __('Website Protection','wpuwebsitepassword'), 'h1') ?></h1>
-        <?php include dirname( __FILE__ ) . '/form.php'; ?>
+        <?php
+        if(isset($this->option['user_protection']) && $this->option['user_protection'] == '1'){
+            echo wp_login_form(apply_filters('wpuwebsitepassword_tpl_login_form_args', array()));
+        }
+        else {
+            include dirname( __FILE__ ) . '/form.php';
+        }
+        ?>
     </body>
 </html>

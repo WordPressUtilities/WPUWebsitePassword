@@ -4,7 +4,7 @@ namespace wpuwebsitepassword;
 /*
 Class Name: WPU Base Settings
 Description: A class to handle native settings in WordPress admin
-Version: 0.12.2
+Version: 0.12.5
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -61,8 +61,11 @@ class WPUBaseSettings {
         return $opt;
     }
 
-    public function get_setting($id) {
+    public function get_setting($id, $lang = false) {
         $opt = $this->get_settings();
+        if ($lang === true) {
+            $id = $this->get_current_language() . '__' . $id;
+        }
         if (isset($opt[$id])) {
             return $opt[$id];
         }
@@ -99,6 +102,9 @@ class WPUBaseSettings {
         }
         if (!isset($settings_details['parent_page'])) {
             $settings_details['parent_page'] = 'options-general.php';
+        }
+        if (!isset($settings_details['show_in_rest'])) {
+            $settings_details['show_in_rest'] = false;
         }
         if (!isset($settings_details['sections']) || empty($settings_details['sections'])) {
             $settings_details['sections'] = array(
@@ -158,8 +164,10 @@ class WPUBaseSettings {
     }
 
     public function add_settings() {
-        register_setting($this->settings_details['option_id'], $this->settings_details['option_id'], array(&$this,
-            'options_validate'
+        register_setting($this->settings_details['option_id'], $this->settings_details['option_id'], array(
+            'sanitize_callback' => array(&$this, 'options_validate'),
+            'show_in_rest' => $this->settings_details,
+            'default' => array()
         ));
         foreach ($this->settings_details['sections'] as $id => $section) {
             if (current_user_can($section['user_cap'])) {
@@ -398,7 +406,6 @@ jQuery('.wpubasesettings-mediabox .button').click(function(e) {
         \$imgPreview.find('img').attr('src',attachment.url);
         // Send the attachment id to our hidden input
         \$imgField.val(attachment.id);
-        console.log(\$imgField);
     });
 
     // Finally, open the modal on click
@@ -428,7 +435,6 @@ EOT;
 
     public function admin_settings() {
         echo '<div class="wrap"><h1>' . get_admin_page_title() . '</h1>';
-        settings_errors();
         do_action('wpubasesettings_before_content_' . $this->hook_page);
         if (current_user_can($this->settings_details['user_cap'])) {
             echo '<hr />';
@@ -482,6 +488,17 @@ EOT;
             return qtranxf_getSortedLanguages();
         }
 
+        // Obtaining from Polylang
+        global $polylang;
+        if (function_exists('pll_the_languages') && is_object($polylang)) {
+            $poly_langs = $polylang->model->get_languages_list();
+            $languages = array();
+            foreach ($poly_langs as $lang) {
+                $languages[$lang->slug] = $lang->slug;
+            }
+            return $languages;
+        }
+
         return array();
 
     }
@@ -495,6 +512,11 @@ EOT;
         // Obtaining from Qtranslate X
         if (function_exists('qtranxf_getLanguage')) {
             return qtranxf_getLanguage();
+        }
+
+        // Obtaining from Polylang
+        if (function_exists('pll_current_language')) {
+            return pll_current_language();
         }
 
         return '';
