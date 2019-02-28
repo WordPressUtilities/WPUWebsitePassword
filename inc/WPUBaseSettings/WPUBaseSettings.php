@@ -4,7 +4,7 @@ namespace wpuwebsitepassword;
 /*
 Class Name: WPU Base Settings
 Description: A class to handle native settings in WordPress admin
-Version: 0.12.5
+Version: 0.12.8
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -16,19 +16,23 @@ class WPUBaseSettings {
     private $hook_page = false;
     private $has_media_setting = false;
     private $admin_url = false;
+    private $is_admin_page = false;
+    private $has_create_page = false;
 
     public function __construct($settings_details = array(), $settings = array()) {
         if (empty($settings_details) || empty($settings)) {
             return;
         }
         $this->set_datas($settings_details, $settings);
-
         $this->has_media_setting = false;
         foreach ($this->settings as $setting) {
             if ($setting['type'] == 'media') {
                 $this->has_media_setting = true;
             }
         }
+
+        $this->is_admin_page = isset($_GET['page']) && $_GET['page'] == $this->settings_details['plugin_id'];
+        $this->has_create_page = isset($settings_details['create_page']) && $settings_details['create_page'];
 
         $opt = $this->get_settings();
         add_action('admin_init', array(&$this,
@@ -37,8 +41,10 @@ class WPUBaseSettings {
         add_filter('option_page_capability_' . $this->settings_details['option_id'], array(&$this,
             'set_min_capability'
         ));
-
-        if (isset($settings_details['create_page']) && $settings_details['create_page']) {
+        add_action('admin_notices', array(&$this,
+            'admin_notices'
+        ));
+        if ($this->has_create_page) {
             add_action('admin_menu', array(&$this,
                 'admin_menu'
             ));
@@ -49,6 +55,16 @@ class WPUBaseSettings {
         } else {
             add_action('init', array(&$this, 'load_assets'));
         }
+    }
+
+    public function admin_notices() {
+        if (!$this->is_admin_page) {
+            return;
+        }
+        if ($this->settings_details['parent_page'] == 'options-general.php') {
+            return;
+        }
+        settings_errors();
     }
 
     public function get_settings() {
@@ -171,7 +187,11 @@ class WPUBaseSettings {
         ));
         foreach ($this->settings_details['sections'] as $id => $section) {
             if (current_user_can($section['user_cap'])) {
-                add_settings_section($id, $section['name'], '', $this->settings_details['plugin_id']);
+                add_settings_section($id,
+                    $section['name'],
+                    isset($section['description']) ? $section['description'] : '',
+                    $this->settings_details['plugin_id']
+                );
             }
         }
 

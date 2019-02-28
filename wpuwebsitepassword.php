@@ -4,7 +4,7 @@
 Plugin Name: WPU Website Password
 Plugin URI: https://github.com/WordPressUtilities/wpuwebsitepassword
 Description: Add a single password requirement to your website
-Version: 0.6.0
+Version: 0.7.0
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,9 +12,8 @@ License URI: http://opensource.org/licenses/MIT
 */
 
 class WPUWebsitePassword {
-    public $plugin_version = '0.6.0';
+    public $plugin_version = '0.7.0';
     public $option;
-    public $messages;
     public $has_user_password = false;
     public $settings;
     public $settings_details;
@@ -42,10 +41,10 @@ class WPUWebsitePassword {
         $this->settings_details = array(
             'create_page' => true,
             'plugin_basename' => plugin_basename(__FILE__),
-            'parent_page' => 'tools.php',
+            'parent_page' => 'options-general.php',
             'plugin_name' => __('Website Password', 'wpuwebsitepassword'),
-            'plugin_id' => 'wpuwebsitepassword',
-            'option_id' => 'wpuwebsitepassword_options',
+            'plugin_id' => $this->options['plugin_id'],
+            'option_id' => $this->options['plugin_id'] . '_options',
             'sections' => array(
                 'protection' => array(
                     'name' => __('Protection', 'wpuwebsitepassword')
@@ -67,17 +66,16 @@ class WPUWebsitePassword {
                 'label_check' => __('Enable protection', 'wpuwebsitepassword'),
                 'type' => 'checkbox'
             ),
+            'redirect_homepage' => array(
+                'label' => __('Redirect to home', 'wpuwebsitepassword'),
+                'label_check' => __('Redirect unauthenticated access to the homepage.', 'wpuwebsitepassword'),
+                'type' => 'checkbox'
+            ),
             'user_protection' => array(
                 'label' => __('User Access', 'wpuwebsitepassword'),
                 'label_check' => __('Protect via login rather than simple password.', 'wpuwebsitepassword'),
                 'type' => 'checkbox',
                 'section' => 'user'
-            ),
-            'cookie_duration' => array(
-                'label' => __('Cookie Duration', 'wpuwebsitepassword'),
-                'type' => 'number',
-                'help' => __('Visitors will be automatically logged out after this number of seconds.', 'wpuwebsitepassword'),
-                'section' => 'password'
             ),
             'password' => array(
                 'label' => __('Password', 'wpuwebsitepassword'),
@@ -90,10 +88,10 @@ class WPUWebsitePassword {
                 'type' => 'checkbox',
                 'section' => 'password'
             ),
-            'redirect_homepage' => array(
-                'label' => __('Redirect to home', 'wpuwebsitepassword'),
-                'label_check' => __('Redirect unauthenticated access to the homepage.', 'wpuwebsitepassword'),
-                'type' => 'checkbox',
+            'cookie_duration' => array(
+                'label' => __('Cookie Duration', 'wpuwebsitepassword'),
+                'type' => 'number',
+                'help' => __('Visitors will be automatically logged out after this number of seconds.', 'wpuwebsitepassword'),
                 'section' => 'password'
             ),
             'load_assets' => array(
@@ -115,30 +113,20 @@ class WPUWebsitePassword {
                 'section' => 'template'
             )
         );
-        $this->option = get_option($this->settings_details['option_id']);
     }
 
     public function init() {
 
-        include 'inc/WPUBaseUpdate/WPUBaseUpdate.php';
+        include dirname(__FILE__) . '/inc/WPUBaseUpdate/WPUBaseUpdate.php';
         $this->settings_update = new \wpuwebsitepassword\WPUBaseUpdate(
             'WordPressUtilities',
             'wpuwebsitepassword',
             $this->plugin_version);
 
-        if (!is_admin()) {
-            return;
-        }
+        include dirname(__FILE__) . '/inc/WPUBaseSettings/WPUBaseSettings.php';
+        $wpubasesettings = new \wpuwebsitepassword\WPUBaseSettings($this->settings_details, $this->settings);
 
-        /* Messages */
-        include 'inc/WPUBaseMessages/WPUBaseMessages.php';
-        $this->messages = new \wpuwebsitepassword\WPUBaseMessages($this->options['plugin_id']);
-        add_action('wpuwebsitepassword_admin_notices', array(&$this->messages,
-            'admin_notices'
-        ));
-
-        include 'inc/WPUBaseSettings/WPUBaseSettings.php';
-        new \wpuwebsitepassword\WPUBaseSettings($this->settings_details, $this->settings);
+        $this->option = $wpubasesettings->get_settings();
     }
 
     public function disable_rest_endpoints($endpoints) {
