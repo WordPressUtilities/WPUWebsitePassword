@@ -4,7 +4,7 @@
 Plugin Name: WPU Website Password
 Plugin URI: https://github.com/WordPressUtilities/wpuwebsitepassword
 Description: Add a single password requirement to your website
-Version: 0.7.1
+Version: 0.8.0
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ License URI: http://opensource.org/licenses/MIT
 */
 
 class WPUWebsitePassword {
-    public $plugin_version = '0.7.1';
+    public $plugin_version = '0.8.0';
     public $option;
     public $has_user_password = false;
     public $settings;
@@ -22,7 +22,7 @@ class WPUWebsitePassword {
     );
 
     public function __construct() {
-        add_action('init', array(&$this, 'load_translation'));
+        add_action('plugins_loaded', array(&$this, 'load_translation'));
         add_action('init', array(&$this, 'set_options'));
         add_action('init', array(&$this, 'init'));
         add_action('template_redirect', array(&$this, 'trigger_password_prompt'));
@@ -30,6 +30,8 @@ class WPUWebsitePassword {
         add_action('wpuwebsitepassword_before_template', array(&$this, 'load_default_template'), 90);
         add_filter('wpuwebsitepassword_tpl_form__title', array(&$this, 'load_default_title'), 90, 2);
         add_filter('rest_endpoints', array(&$this, 'disable_rest_endpoints'), 10, 1);
+        add_filter('wputh_post_metas_boxes', array(&$this, 'wputh_post_metas_boxes'), 10, 1);
+        add_filter('wputh_post_metas_fields', array(&$this, 'wputh_post_metas_fields'), 10, 1);
     }
 
     public function load_translation() {
@@ -152,6 +154,7 @@ class WPUWebsitePassword {
             return false;
         }
 
+        /* Disable via a hook */
         if (apply_filters('wpuwebsitepassword_prevent_prompt', false)) {
             return false;
         }
@@ -160,6 +163,12 @@ class WPUWebsitePassword {
         if (is_user_logged_in()) {
             return false;
         }
+
+        /* Disable for a post */
+        if (is_singular() && get_post_meta(get_the_ID(), 'wpuwebsitepassword_disable_protection', 1)) {
+            return false;
+        }
+
         return true;
     }
 
@@ -226,6 +235,27 @@ class WPUWebsitePassword {
             $title = '<img src="' . get_header_image() . '" alt="' . esc_attr($title) . '" />';
         }
         return $title;
+    }
+
+    /* ----------------------------------------------------------
+      Post settings
+    ---------------------------------------------------------- */
+
+    public function wputh_post_metas_boxes($boxes) {
+        $boxes['box_wpuwebsitepassword'] = array(
+            'name' => __('Website Password', 'wpuwebsitepassword'),
+            'post_type' => array('post', 'page')
+        );
+        return $boxes;
+    }
+
+    public function wputh_post_metas_fields($fields) {
+        $fields['wpuwebsitepassword_disable_protection'] = array(
+            'box' => 'box_wpuwebsitepassword',
+            'name' => __('Disable Password Protection', 'wpuwebsitepassword'),
+            'type' => 'select'
+        );
+        return $fields;
     }
 
     /* ----------------------------------------------------------
