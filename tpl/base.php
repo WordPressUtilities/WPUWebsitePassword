@@ -43,19 +43,23 @@ button {
 </style>
 <?php endif; ?>
     </head>
-    <body>
+    <body class="wpuwebsitepassword-index">
         <?php do_action('wpuwebsitepassword_tpl_form__after_body_start') ?>
-        <?php if(apply_filters('wpuwebsitepassword_tpl_form__display_title', true)): ?>
-        <h1><?php echo apply_filters('wpuwebsitepassword_tpl_form__title', __('Website Protection','wpuwebsitepassword'), 'h1') ?></h1>
-        <?php endif; ?>
-        <?php
-        if(isset($this->option['user_protection']) && $this->option['user_protection'] == '1'){
-            echo wp_login_form(apply_filters('wpuwebsitepassword_tpl_login_form_args', array()));
-        }
-        else {
-            include dirname( __FILE__ ) . '/form.php';
-        }
-        ?>
+        <div class="wpuwebsitepassword-content">
+            <?php do_action('wpuwebsitepassword_tpl_form__after_content_start') ?>
+            <?php if(apply_filters('wpuwebsitepassword_tpl_form__display_title', true)): ?>
+            <h1><?php echo apply_filters('wpuwebsitepassword_tpl_form__title', __('Website Protection','wpuwebsitepassword'), 'h1') ?></h1>
+            <?php endif; ?>
+            <?php
+            if(isset($this->option['user_protection']) && $this->option['user_protection'] == '1'){
+                echo wp_login_form(apply_filters('wpuwebsitepassword_tpl_login_form_args', array()));
+            }
+            else {
+                include dirname( __FILE__ ) . '/form.php';
+            }
+            ?>
+            <?php do_action('wpuwebsitepassword_tpl_form__before_content_end') ?>
+        </div>
         <?php do_action('wpuwebsitepassword_tpl_form__before_body_end') ?>
     </body>
 </html>
