@@ -4,7 +4,7 @@
 Plugin Name: WPU Website Password
 Plugin URI: https://github.com/WordPressUtilities/wpuwebsitepassword
 Description: Add a single password requirement to your website
-Version: 0.8.1
+Version: 0.8.2
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -12,7 +12,7 @@ License URI: http://opensource.org/licenses/MIT
 */
 
 class WPUWebsitePassword {
-    public $plugin_version = '0.8.1';
+    public $plugin_version = '0.8.2';
     public $option;
     public $has_user_password = false;
     public $settings;

@@ -4,7 +4,7 @@ namespace wpuwebsitepassword;
 /*
 Class Name: WPU Base Settings
 Description: A class to handle native settings in WordPress admin
-Version: 0.12.9
+Version: 0.14.0
 Author: Darklg
 Author URI: http://darklg.me/
 License: MIT License
@@ -101,15 +101,10 @@ class WPUBaseSettings {
 
     public function set_datas($settings_details, $settings) {
         if (!is_array($settings_details)) {
-            $settings_details = array(
-                'plugin_id' => 'wpubasesettingsdefault',
-                'option_id' => 'wpubasesettingsdefault_options',
-                'sections' => array(
-                    'import' => array(
-                        'name' => __('Import Settings', 'wpubasesettingsdefault')
-                    )
-                )
-            );
+            $settings_details = array();
+        }
+        if (!isset($settings_details['plugin_id'])) {
+            $settings_details['plugin_id'] = 'wpubasesettingsdefault';
         }
         if (!isset($settings_details['user_cap'])) {
             $settings_details['user_cap'] = 'manage_options';
@@ -152,7 +147,7 @@ class WPUBaseSettings {
         $default_section = key($this->settings_details['sections']);
         foreach ($settings as $id => $input) {
             $settings[$id]['label'] = isset($input['label']) ? $input['label'] : '';
-            $settings[$id]['label_check'] = isset($input['label_check']) ? $input['label_check'] : '';
+            $settings[$id]['label_check'] = isset($input['label_check']) ? $input['label_check'] : $settings[$id]['label'];
             $settings[$id]['help'] = isset($input['help']) ? $input['help'] : '';
             $settings[$id]['type'] = isset($input['type']) ? $input['type'] : 'text';
             $settings[$id]['section'] = isset($input['section']) ? $input['section'] : $default_section;
@@ -246,6 +241,7 @@ class WPUBaseSettings {
             case 'checkbox':
                 $option_id = isset($input[$id]) && !in_array($input[$id], array('0', '')) ? '1' : '0';
                 break;
+            case 'radio':
             case 'select':
                 if (!array_key_exists($input[$id], $setting['datas'])) {
                     $option_id = key($setting['datas']);
@@ -261,6 +257,8 @@ class WPUBaseSettings {
                     $option_id = '';
                 }
                 break;
+            case 'post':
+            case 'page':
             case 'media':
             case 'number':
                 if (!is_numeric($input[$id])) {
@@ -320,6 +318,23 @@ class WPUBaseSettings {
             echo '</div>';
             echo '<button type="button" class="button">' . __('Upload New Media') . '</button>';
             echo '</div>';
+            break;
+        case 'radio':
+            foreach ($args['datas'] as $_id => $_data) {
+                echo '<p>';
+                echo '<input id="' . $args['id'] . $_id . '" type="radio" ' . $name . ' value="' . esc_attr($_id) . '" ' . ($value == $_id ? 'checked="checked"' : '') . ' />';
+                echo '<label class="wpubasesettings-radio-label" for="' . $args['id'] . $_id . '">' . $_data . '</label>';
+                echo '</p>';
+            }
+            break;
+        case 'post':
+        case 'page':
+            wp_dropdown_pages(array(
+                'name' => $name_val,
+                'id' => $args['id'],
+                'selected' => $value,
+                'post_type' => isset($args['post_type']) ? $args['post_type'] : $args['type']
+            ));
             break;
         case 'select':
             echo '<select ' . $name . ' ' . $id . '>';
@@ -451,7 +466,7 @@ EOT;
     public function admin_menu() {
         $this->hook_page = add_submenu_page($this->settings_details['parent_page'], $this->settings_details['plugin_name'] . ' - ' . __('Settings'), $this->settings_details['plugin_name'], $this->settings_details['user_cap'], $this->settings_details['plugin_id'], array(&$this,
             'admin_settings'
-        ), '', 110);
+        ), 110);
         add_action('load-' . $this->hook_page, array(&$this, 'load_assets'));
     }
 
